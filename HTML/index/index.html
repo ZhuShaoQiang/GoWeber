@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noarchive">
+    <title> 查询标签 | 黑镜·洞察</title>
+    <link rel="shortcut icon" href="#" />
+</head>
+<body>
+<!-- 下面是顶部的导航栏 -->
+<div class="navbar navbar-inverse navbar-static-top" style="margin-bottom:20px;">
+    <div class="container">
+        <div class="navbar-header">
+            <button class="navbar-toggle" data-toggle="collapse" data-target="#mynavmenu"> <!-- 这是个id -->
+                <span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span><!-- 这是那个三根条 -->
+            </button><a href="/" class="navbar-brand">黑镜·洞察</a>
+        </div>
+        <div class="collapse navbar-collapse" id="mynavmenu">
+            <ul class="nav navbar-nav">
+                <!-- 查询 button -->
+                <li>
+                    <div class="btn-group">
+                        <button type="button" class="MyBtn MyBtn-info btn btn-info">
+                            <a href="/">查询标签</a></button>
+                    </div>
+                </li>
+                <!-- 增加 button -->
+                <li>
+                    <div class="btn-group">
+                        <button type="button" class="MyBtn MyBtn-info btn btn-info">
+                            <a href="/addNew/">新增标签</a></button>
+                    </div>
+                </li>
+                <!-- 管理的按钮 button -->
+                <li>
+                    <div class="btn-group">
+                        <button type="button" class="MyBtn MyBtn-info btn btn-info">
+                            <a href="/manage/">标签管理</a></button>
+                    </div>
+                </li>
+                <!-- 标签统计 button -->
+                <li>
+                    <div class="btn-group">
+                        <button type="button" class="MyBtn MyBtn-info btn btn-info">
+                            <a href="/count/">标签统计</a></button>
+                    </div>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <p class="navbar-text">欢迎 {{.Name}} 登陆</p>
+                <li>
+                    <div class="btn-group navbar-right">
+                        <button type="button" class="MyBtn MyBtn-info btn btn-info">
+                            <a href="/logout/">退出登陆</a></button>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+<form class="form-inline text-left" style="margin-bottom: 20px;padding-left: 20px;" id="searchForm" onsubmit="return false;">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-7">
+                <div class="form-group">
+                    <div class="input-group">
+                        <div class="input-group-addon">号码</div>
+                        <input type="text" class="form-control" onkeyup="detectEnter(event)" id="searchNumber" placeholder="请输入需要查询的号码">
+                    </div>
+                </div>
+                <button type="button" value="search" onclick="searchNumbers('countNumber+')" class="btn btn-primary">查询</button>
+            </div>
+            <div class="col-xs-5">
+                <input type="file" id="fileInput" onchange="upLoadFile('countNumber+')" style="display: none">
+                <button type="button" onclick="fakeFileInputOnClick()" class="btn btn-info">选择文件</button>
+                <button type="button" onclick="downloadResultToLocal()" class="btn btn-primary">查询结果下载</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table" id="resultTB">
+        <tr>
+            <th>标签</th>
+            <th id="countNumberInTB">命中账号数</th>
+            <th id="riskLevelInTB">风险程度</th>
+            <th>备注</th>
+            <th id="updateTimeInTB">更新时间</th>
+            <th id="authorInTB">作者</th>
+            <th>操作</th>
+        </tr>
+    </table>
+</div>
+
+<nav aria-label="...">
+    <ul class="pager">
+        <b id="currentPage"></b> / <b id="wholePage"></b> 页
+        <li><button id="pre" type="button" class="btn btn-link btn-xs" onclick="toPrePage()">上一页</button></li>
+        <li><button id="next" type="button" class="btn btn-link btn-xs" onclick="toNextPage()">下一页</button></li>
+        跳至&nbsp;<input type="number" id="skipToPage" onkeyup="skipToPage(event)" style="width: 45px;">&nbsp;页
+    </ul>
+</nav>
+<div class="text-center" style="margin-bottom: 25px;margin-top: 25px;">
+    <span id="changeStatus"></span>
+</div>
+
+<div class="text-center">
+    <button type="button" value="search" onclick="clearAll()" class="btn btn-primary">清空查询数据</button>
+</div>
+<div class="text-center">
+    <span id="queryStatus"></span>
+</div>
+
+<div id="popDiv" style="padding: 30px 30px 30px 20px;">
+    <p class="text-center">如果超过一百个，只显示前100个</p>
+    <div>
+        <ul class="list-group" id="numberContent">
+        </ul>
+    </div>
+    <div class="form-group">
+        <div class="col-sm-offset-5 col-sm-4">
+            <button type="button" onclick="changeThePopDiv(false)" class="btn btn-info">关闭我</button>
+        </div>
+    </div>
+</div>
+
+<div style="margin-top: 100px"></div>
+<div class="container navbar-fixed-bottom text-right">
+    <button type="button" class="btn btn-default btn-mg">
+        <a href="#"><span class="glyphicon glyphicon-menu-up" aria-hidden="true"></span><br>返回顶部</a>
+    </button>
+</div>
+<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style type="text/css">
+    img{
+        width: 300px;
+        height: 220px;
+    }
+    .MyBtn{
+        padding: 14px 12px;
+    }
+    .MyBtn-info{
+        background-color: #222222;
+        border-color: #222222;
+    }
+</style>
+
+<script type="text/javascript">
+    var headOfTableHTML = '<tr><th>标签</th><th id="countNumberInTB">命中账号数</th><th id="riskLevelInTB">风险程度</th><th>备注</th><th id="updateTimeInTB">更新时间</th><th id="authorInTB">作者</th><th>操作</th></tr>';
+    function fakeFileInputOnClick() {
+        $('#fileInput').click();
+    }
+    function putTheDataOnTheHTML(pageDatas, sortMethod) {
+        var resultTB = $("#resultTB");
+        sessionStorage.setItem("sortMethod", sortMethod);   // 先把本次的排序方式存起来，以便下次排序
+        resultTB.html(headOfTableHTML);
+        var countNumberInTB = $('#countNumberInTB');
+        var riskLevelInTB = $("#riskLevelInTB");
+        var updateTimeInTB = $('#updateTimeInTB');
+        var authorInTB = $("#authorInTB");
+
+        countNumberInTB.html('<button type="button" class="btn btn-link btn-xs" onclick="searchNumbers(\'countNumber+\')">' + countNumberInTB.text() + '</button>');
+        riskLevelInTB.html('<button type="button" class="btn btn-link btn-xs" onclick="searchNumbers(\'riskLevel+\')">' + riskLevelInTB.text() + '</button>');
+        updateTimeInTB.html('<button type="button" class="btn btn-link btn-xs" onclick="searchNumbers(\'updateTime+\')">' + updateTimeInTB.text() + '</button>');
+        authorInTB.html('<button type="button" class="btn btn-link btn-xs" onclick="searchNumbers(\'author+\')">' + authorInTB.text() + '</button>');
+        // 下面一大堆，就是改变点击的方法
+        if (sortMethod == "countNumber+"){
+            countNumberInTB.html('<button type="button" class="btn btn-link btn-xs" onclick="searchNumbers(\'countNumber-\')">' + countNumberInTB.text() + '<span id="countSpan" class="glyphicon glyphicon-triangle-bottom"></span></button>');
+        } else if (sortMethod == "countNumber-") {
+            countNumberInTB.html('<button type="button" class="btn btn-link btn-xs" onclick="searchNumbers(\'countNumber+\')">' + countNumberInTB.text() + '<span id="countSpan" class="glyphicon glyphicon-triangle-top"></span></button>');
+        } else if (sortMethod == "riskLevel+") {
+            riskLevelInTB.html('<button type="button" class="btn btn-link btn-xs" onclick="searchNumbers(\'riskLevel-\')">' + riskLevelInTB.text() + '<span id="countSpan" class="glyphicon glyphicon-triangle-bottom"></span></button>');
+        } else if (sortMethod == "riskLevel-") {
+            riskLevelInTB.html('<button type="button" class="btn btn-link btn-xs" onclick="searchNumbers(\'riskLevel+\')">' + riskLevelInTB.text() + '<span id="countSpan" class="glyphicon glyphicon-triangle-top"></span></button>');
+        } else if (sortMethod == "updateTime+"){
+            updateTimeInTB.html('<button type="button" class="btn btn-link btn-xs" onclick="searchNumbers(\'updateTime-\')">' + updateTimeInTB.text() + '<span id="countSpan" class="glyphicon glyphicon-triangle-bottom"></span></button>');
+        } else if (sortMethod == "updateTime-") {
+            updateTimeInTB.html('<button type="button" class="btn btn-link btn-xs" onclick="searchNumbers(\'updateTime+\')">' + updateTimeInTB.text() + '<span id="countSpan" class="glyphicon glyphicon-triangle-top"></span></button>');
+        } else if (sortMethod == "author+") {
+            authorInTB.html('<button type="button" class="btn btn-link btn-xs" onclick="searchNumbers(\'author-\')">' + authorInTB.text() + '<span id="countSpan" class="glyphicon glyphicon-triangle-bottom"></span></button>');
+        } else if (sortMethod == "author-") {
+            authorInTB.html('<button type="button" class="btn btn-link btn-xs" onclick="searchNumbers(\'author+\')">' + authorInTB.text() + '<span id="countSpan" class="glyphicon glyphicon-triangle-top"></span></button>');
+        }
+
+        var allBatchID = [];
+        for (var data in pageDatas){    // 拿到每一个数据的下标
+            var pageData = pageDatas[data];     // 拿到每一个数据
+            allBatchID[data] = pageData[6];
+            resultTB.html(resultTB.html() +
+            '<tr title="'+ pageData[6] +'"><td>'+pageData[0]+
+            '</td><td>'+ pageData[5] +
+            '</td><td>'+ pageData[1] +
+            '</td><td>'+ pageData[2] +
+            '</td><td>'+ pageData[3] +
+            '</td><td>'+ pageData[4] +
+            '</td><td>'+ '<button class="btn btn-link btn-xs" onClick="countDetail($(this))">账号明细</button>' +'</td></tr>');
+        }
+
+        sessionStorage.setItem("allBatchID", allBatchID);
+    }
+    function upLoadFile(sortMethod) {
+        sessionStorage.removeItem("searchNumbers");
+        var statusSpan = $('#queryStatus');
+        var fileInput = $('#fileInput');
+        if (fileInput.val()){
+            if(confirm("确定上传这个文件?\n" + fileInput.val())){
+                var formData = new FormData();
+                formData.append("fileData", fileInput[0].files[0]); //文件内容
+                formData.append("sortMethod", sortMethod);      // 默认是数量高的在前
+                try {
+                    $.ajax({
+                        url: "/useFileSearchNumber/",
+                        dataType: "json",
+                        type: "post",
+                        data: formData,
+                        contentType: false,
+                        processData: false,
+                        success: function (result) {
+                            if (result.status == "true") {
+                                try {
+                                    var fr = new FileReader();
+                                    fr.readAsText(fileInput[0].files[0]);
+                                    fr.onload = function(){
+                                        sessionStorage.setItem("searchNumbers", fr.result);
+                                    };  // 只要成功查询到，把本次的数据存储到本地存储
+
+                                    // 下面处理翻页的信息
+                                    if (result.currentPage == 1) {
+                                        $('#pre').attr('disabled', true);
+                                    } else {
+                                        $('#pre').attr('disabled', false);
+                                    }   // 上下两个用来判读是不是首页或者尾页
+                                    if (result.wholePage == result.currentPage) {
+                                        $('#next').attr("disabled", true);
+                                    } else {
+                                        $('#next').attr("disabled", false);
+                                    }
+                                    $('#currentPage').html(result.currentPage);
+                                    $('#wholePage').html(result.wholePage);
+
+                                    putTheDataOnTheHTML(result.pageData, sortMethod);
+                                    statusSpan.html("查询成功");
+                                } catch (e) {
+                                    statusSpan.html("查询成功但是数据放置失败!");
+                                    console.log(e);
+                                }
+                            } else {
+                                statusSpan.html("查询失败，可能没有文件中的数据");
+                            }
+                        }, complete: function () {
+                            $('#fileInput').val("");
+                        }, error: function (e) {
+                            statusSpan.html("检查网络");
+                            console.log(e)
+                        }
+                    })
+                } catch (e) {
+                    console.log(e)
+                }
+            }
+        }
+    }
+
+    function downloadResultToLocal() {
+        // 把查询结果放置到本地
+        var searchNumber = sessionStorage.getItem("searchNumbers");
+        if (searchNumber) {
+            $.ajax({
+                type: "POST",
+                dataType: "json",
+                url: "/downloadResultToLocal/",
+                data: {
+                    "searchNumber": searchNumber,
+                },
+                success: function (result) {
+                    if (result.status == "true"){
+                        JSONToExcelConvertor(result.resultList);
+                    }
+                }
+            });
+        }
+    }
+
+    function getDataFromServerByID(id) {
+        var searchNumber = sessionStorage.getItem("searchNumbers");
+        if (searchNumber){     // 如果有搜索的号码的话
+            $.ajax({
+                type: "POST",
+                dataType: "json",
+                url: "/searchAllNumberByID/",
+                data: {
+                    "theID": id,
+                    "searchNumber": searchNumber,
+                },
+                success: function (result) {
+                    if (result.status == "true") {
+                        changeThePopDiv(true, result.allNumber);
+                    } else {
+                        alert("未知错误!");
+                    }
+                },
+                error: function () {alert("检查网络！")}
+            });
+        }
+    }
+
+
+    function searchNumbers(sortMethod, pageNumber, searchNumbers) {
+        sessionStorage.removeItem("searchNumbers");
+        if (searchNumbers){
+            var searchNumber = searchNumbers;
+        }else {
+            var searchNumber = $('#searchNumber').val();
+        }
+        var statusSpan = $('#queryStatus');     // 一个记录状态的span
+        $.ajax({        // 使用ajax向后台发送数据
+            type: "POST",
+            dataType: "json",
+            url: "/searchNumberIndex/" ,
+            data: {
+                "searchNumber":searchNumber,
+                "sortMethod": sortMethod,
+                "pageNumber": pageNumber,
+            },
+            success: function (result) {
+                // 这里拿到了结果
+                if (result.status == "true") {
+                    // 下面处理翻页的信息
+                    if (result.currentPage == 1) {
+                        $('#pre').attr('disabled', true);
+                    } else {
+                        $('#pre').attr('disabled', false);
+                    }   // 上下两个用来判读是不是首页或者尾页
+                    if (result.wholePage == result.currentPage) {
+                        $('#next').attr("disabled", true);
+                    } else {
+                        $('#next').attr("disabled", false);
+                    }
+                    $('#currentPage').html(result.currentPage);
+                    $('#wholePage').html(result.wholePage);
+                    sessionStorage.setItem("searchNumbers", searchNumber);
+                    putTheDataOnTheHTML(result.pageData, sortMethod);
+                    statusSpan.html("查询成功");
+                }else { //如果不是true，说明错了
+                    clearAll();
+                    statusSpan.html("请检查输入数据！");
+                }
+            }, error : function() {
+                clearAll();
+                statusSpan.html("异常！");
+            }
+        });
+    }
+
+    function clearAll() {
+        var resultTB = $("#resultTB");
+        var statusSpan = $('#queryStatus');
+        statusSpan.html("");
+        resultTB.html(headOfTableHTML);
+        sessionStorage.clear();
+    }
+    function detectEnter(event) {
+        if(event.code == "Enter"){
+            searchNumbers('countNumber+');   //如果按下了回车，则直接进行查找
+        }
+    }
+    function countDetail(that) {
+        var theID = that.parent().parent().attr("title");
+        getDataFromServerByID(theID);
+    }
+
+    // 下面是新写弹出框的程序,
+    function changeThePopDiv(flag, allNumbers) {
+        if (flag) {
+            var numberContent = $('#numberContent');
+            for (var number in allNumbers){
+                numberContent.html(numberContent.html() +
+                        '<li class="list-group-item">'+ allNumbers[number] +'</li>'
+                );
+                if (number > 100){
+                    break;
+                }
+            }
+            $('#popDiv').show();
+            $('#popDiv').css({"display":"block",
+                "position":"absolute",
+                "width":$(window).width()/2+80,
+                "height":"auto",
+                "z-index":"999",
+                "background": "#fff",
+                "top": "100px",
+                "right":"70px",
+            });
+            // 下面是加一个灰色的层，防止弹出后误点，误操作
+            $("body").append("<div id='greybackground'></div>");
+            $("#greybackground").css({"opacity":"0.5",
+                "height":$(document).height(),
+                "background":"#000",
+                "display": "block",
+                "z-index":"998",
+                "width": "100%",
+                "position": "absolute",
+                "top":"0",
+                "left":"0",
+            });
+        } else {
+            $('#numberContent').html("");
+            $('#popDiv').hide();
+            // 隐藏弹出式div，并移除隐藏层
+            $("#greybackground").remove();
+        }
+    }
+    $(function () {
+        changeThePopDiv(false); // 页面加载后首先把弹出式div隐藏了
+    });
+
+    function toPrePage() {  //前一页，
+        var currentPage = $('#currentPage').html();
+        var prePage = parseInt(currentPage) - 1;
+        var sortMethod = sessionStorage.getItem("sortMethod");
+        var searchNumber = sessionStorage.getItem("searchNumbers");
+        searchNumbers(sortMethod, prePage, searchNumber);
+    }
+    function toNextPage() { //后一页
+        var currentPage = $('#currentPage').html();
+        var nextPage = parseInt(currentPage) + 1;
+        var sortMethod = sessionStorage.getItem("sortMethod");
+        var searchNumber = sessionStorage.getItem("searchNumbers");
+        searchNumbers(sortMethod, nextPage, searchNumber);
+    }
+    function skipToPage(event) {    // 号码输入框，按下回车搜索
+        var sortMethod = sessionStorage.getItem("sortMethod");
+        var searchNumber = sessionStorage.getItem("searchNumbers");
+        if(event.code == "Enter"){
+            searchNumbers(sortMethod, $('#skipToPage').val(), searchNumber);
+        }
+    }
+
+    function JSONToExcelConvertor(jsonData) {
+        var fileName = "result.xls"
+        var json = jsonData;
+        var excel = '<table>';
+        // style中的内容：mso-number-format:General：设置单元格格式为文本，这样可以保证我们的数据一定是原样
+        excel += "<tr><td style='color:red;text-align:center;mso-number-format:General;'>" + "标签" + "</td>" +
+                "<td style='color:red;text-align:center;mso-number-format:General;'>" + "风险程度" +"</td>" +
+                "<td style='color:red;text-align:center;mso-number-format:General;'>" + "备注" +"</td>" +
+                "<td style='color:red;text-align:center;mso-number-format:General;'>" + "时间" +"</td>" +
+                "<td style='color:red;text-align:center;mso-number-format:General;'>" + "操作人" +"</td>" +
+                "<td style='color:red;text-align:center;mso-number-format:General;'>" + "数据来源" +"</td>" +
+                "<td style='color:red;text-align:center;mso-number-format:General;'>" + "号码" +"</td></tr>";
+        for (var name in json) {    // 循环拿名字
+            var allNumber = json[name];
+            name = name.split("<=>");
+            excel += "<tr><td style='text-align:center;mso-number-format:General;'>" + name[0] + "</td>" +
+                    "<td style='text-align:center;mso-number-format:General;'>" + name[1] +"</td>" +
+                    "<td style='text-align:center;mso-number-format:General;'>" + name[2] +"</td>" +
+                    "<td style='text-align:center;mso-number-format:General;'>" + name[3] +"</td>" +
+                    "<td style='text-align:center;mso-number-format:General;'>" + name[4] +"</td>" +
+                    "<td style='text-align:center;mso-number-format:General;'>" + name[5] +"</td>";
+            for (var i in allNumber) {
+                excel += "<td style='text-align:center;mso-number-format:General;'>" + allNumber[i] +"</td>";
+            }
+            excel += "</tr>";   // 一行结束
+        }
+        //table结束
+        excel += "</table>";
+
+        var excelFile = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns='http://www.w3.org/TR/REC-html40'>";
+        excelFile += '<meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">';
+        excelFile += '<meta http-equiv="content-type" content="application/vnd.ms-excel';
+        excelFile += '; charset=UTF-8">';
+        excelFile += "<head>";
+        excelFile += "<!--[if gte mso 9]>";
+        excelFile += "<xml>";
+        excelFile += "<x:ExcelWorkbook>";
+        excelFile += "<x:ExcelWorksheets>";
+        excelFile += "<x:ExcelWorksheet>";
+        excelFile += "<x:Name>";
+        excelFile += "{worksheet}";
+        excelFile += "</x:Name>";
+        excelFile += "<x:WorksheetOptions>";
+        excelFile += "<x:DisplayGridlines/>";
+        excelFile += "</x:WorksheetOptions>";
+        excelFile += "</x:ExcelWorksheet>";
+        excelFile += "</x:ExcelWorksheets>";
+        excelFile += "</x:ExcelWorkbook>";
+        excelFile += "</xml>";
+        excelFile += "<![endif]-->";
+        excelFile += "</head>";
+        excelFile += "<body>";
+        excelFile += excel; //将table 拼接
+        excelFile += "</body>";
+        excelFile += "</html>";
+
+        var uri = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(excelFile);
+        // 给我们上面格式出来的内容设置一个URI(统一资源标志符)
+        var link = document.createElement("a");     //创建a标签
+        link.href = uri;        // 把上文解析出来的链接赋值给上面创建的a标签
+        link.style = "visibility:hidden";        //设置为不可见，当然设置也可以，看个人喜好
+        link.download = fileName;//指定文件名和文件后缀格式
+        // 不可以改为 xlsx格式，因为我们这个格式化是按照格式写出来的，而真正的excel文件格式很麻烦
+        // 如果打不开，查看这个文件属性是否被锁定了，解除锁定即可。
+        document.body.appendChild(link);        //追加a标签到html内部
+        // 当然不放也能点击，但是为了保险起见，还是放一下
+        link.click();   // 点击我们刚刚创建的a标签
+        document.body.removeChild(link);    // 把刚刚创建的a标签删除了
+    }
+</script>
+</body>
+</html>
+
