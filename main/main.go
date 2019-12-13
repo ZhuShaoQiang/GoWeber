@@ -1,7 +1,7 @@
 package main
 
 import (
-	"taskGoRebuild/route"
+	"GoWeber/route"
 )
 
 func main()  {
