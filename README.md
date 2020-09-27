@@ -1,7 +1,7 @@
 # GoWeber
 ## Preface
   > I'm coding this project!
-  now this GoWeber can be used!
+  now this GoWeber cannot be used!
 ## Description
   A free GoLang framework for build a website, a simple frameword, quickly build your own website.
   
